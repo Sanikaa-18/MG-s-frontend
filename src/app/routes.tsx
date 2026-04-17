@@ -7,6 +7,7 @@ import { BookingScreen } from "./screens/Booking";
 import { HistoryScreen } from "./screens/History";
 import { NotificationsScreen } from "./screens/Notifications";
 import { ProfileScreen } from "./screens/Profile";
+import { ProtectedRoute } from "./screens/protectedroute";
 
 export const router = createBrowserRouter([
   {
@@ -14,10 +15,22 @@ export const router = createBrowserRouter([
     Component: MobileLayout,
     children: [
       { index: true, Component: AuthScreen },
+
       { path: "dashboard", Component: HomeScreen },
+
       { path: "branches", Component: BranchesScreen },
       { path: "book", Component: BookingScreen },
-      { path: "history", Component: HistoryScreen },
+
+      // 🔥 PROTECTED DOCTOR ROUTE
+      {
+        path: "history",
+        element: (
+          <ProtectedRoute>
+            <HistoryScreen />
+          </ProtectedRoute>
+        ),
+      },
+
       { path: "notifications", Component: NotificationsScreen },
       { path: "profile", Component: ProfileScreen },
     ],
