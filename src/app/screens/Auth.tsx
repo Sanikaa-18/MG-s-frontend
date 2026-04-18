@@ -61,12 +61,12 @@ export function AuthScreen() {
 
       setSuccess("Welcome back 🌿");
 
-      localStorage.setItem("userRole", data.role);
+      const savedRole = data.role || role;
 
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 800);
+      localStorage.setItem("userRole", savedRole);
+      localStorage.setItem("isLoggedIn", "true");
 
+      navigate("/dashboard", { replace: true });
     } catch {
       setLoading(false);
       setError("Server not reachable");
@@ -74,7 +74,6 @@ export function AuthScreen() {
     }
   };
 
-  // ✅ FIXED FORGOT PASSWORD (ONLY THIS PART CHANGED)
   const handleForgotPassword = async () => {
     if (!email) {
       setError("Enter email first");
@@ -118,14 +117,11 @@ export function AuthScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#eaffea] relative overflow-hidden">
 
-      {/* background glow */}
       <div className="absolute w-[280px] h-[280px] bg-green-300 blur-3xl rounded-full top-[-100px] left-[-80px] opacity-40 animate-pulse" />
       <div className="absolute w-[260px] h-[260px] bg-green-500 blur-3xl rounded-full bottom-[-90px] right-[-80px] opacity-30 animate-pulse" />
 
-      {/* MOBILE FRAME */}
       <div className="w-full max-w-sm px-5">
 
-        {/* CARD */}
         <div
           className={clsx(
             "bg-white/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-2xl border border-green-100 transition-all",
@@ -133,7 +129,6 @@ export function AuthScreen() {
           )}
         >
 
-          {/* HEADER */}
           <div className="flex flex-col items-center mb-5">
             <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center shadow-lg">
               <HeartPulse className="text-white" />
@@ -146,7 +141,6 @@ export function AuthScreen() {
             </p>
           </div>
 
-          {/* ROLE */}
           <div className="flex bg-green-100 p-1 rounded-xl mb-4">
             <button
               onClick={() => setRole("patient")}
@@ -169,7 +163,6 @@ export function AuthScreen() {
             </button>
           </div>
 
-          {/* LOGIN/SIGNUP */}
           <div className="flex mb-3">
             <button
               onClick={() => setIsLogin(true)}
@@ -192,7 +185,6 @@ export function AuthScreen() {
             </button>
           </div>
 
-          {/* ERROR */}
           {error && (
             <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 p-2 rounded-xl mb-3 text-xs animate-pulse">
               <AlertCircle className="w-4 h-4" />
@@ -200,7 +192,6 @@ export function AuthScreen() {
             </div>
           )}
 
-          {/* SUCCESS */}
           {success && (
             <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 p-2 rounded-xl mb-3 text-xs animate-bounce">
               <CheckCircle className="w-4 h-4" />
@@ -208,7 +199,6 @@ export function AuthScreen() {
             </div>
           )}
 
-          {/* FORM */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
 
             <input
@@ -237,7 +227,6 @@ export function AuthScreen() {
             </button>
           </form>
 
-          {/* FORGOT */}
           {isLogin && (
             <button
               type="button"
@@ -268,10 +257,10 @@ export function AuthScreen() {
               </button>
             </div>
           )}
+
         </div>
       </div>
 
-      {/* shake animation */}
       <style>{`
         @keyframes shake {
           0% { transform: translateX(0); }

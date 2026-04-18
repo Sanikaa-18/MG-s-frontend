@@ -1,99 +1,222 @@
-import { motion } from "motion/react";
-import { MapPin, Phone, Clock, Navigation, Map } from "lucide-react";
+import { useState, useEffect } from "react";
+import { io, Socket } from "socket.io-client";
+import {
+  Send,
+  User,
+  ArrowLeft,
+  Search,
+  MapPin,
+  Phone,
+  Clock,
+  Navigation,
+} from "lucide-react";
 
-export function BranchesScreen() {
-  const branches = [
-    {
-      id: "main",
-      name: "Main Clinic (North)",
-      address: "123 Healing Way, Harmony District",
-      phone: "+91 98765 43210",
-      timings: "Mon-Sat: 9:00 AM - 1:00 PM",
-      image: "https://images.unsplash.com/photo-1769698678497-c41f0ab47c3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBjbGluaWMlMjBidWlsZGluZyUyMGV4dGVyaW9yfGVufDF8fHx8MTc3MzIwNDMzNnww&ixlib=rb-4.1.0&q=80&w=1080",
-      status: "Open Now"
-    },
-    {
-      id: "south",
-      name: "South Branch",
-      address: "45 Serenity Blvd, South Park",
-      phone: "+91 98765 01234",
-      timings: "Mon-Sat: 4:00 PM - 8:00 PM",
-      image: "https://images.unsplash.com/photo-1764727291644-5dcb0b1a0375?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwY2xpbmljJTIwcmVjZXB0aW9ufGVufDF8fHx8MTc3MzE5MDQxOHww&ixlib=rb-4.1.0&q=80&w=1080",
-      status: "Opens 4 PM"
-    }
-  ];
+const socket: Socket = io("http://localhost:5000");
+
+export default function BranchesScreen() {
+  const role = localStorage.getItem("role");
+
+  if (role === "patient") {
+    return <PatientBranchesView />;
+  }
+
+  return <DoctorChatView />;
+}
+
+
+
+
+
+
+// ========================= 🧑 PATIENT VIEW =========================
+function PatientBranchesView() {
+  const clinic = {
+    name: "MG's Health & Wellness Clinic",
+    address: `Pange Apartment, Shop No 4,
+Behind Ashapura Medical,
+Varcha Gaon, Kolshet`,
+    phone: "+91 78880 50787",
+    timings: `Morning: 10:30 AM – 1:30 PM
+Evening: 6:30 PM – 9:00 PM`,
+    image1: "/clinic-board.jpeg",
+    image2: "/clinic-inside.jpeg",
+    mapLink: "https://maps.google.com/?q=Kolshet+Varcha+Gaon",
+  };
 
   return (
-    <div className="flex-1 bg-slate-50 min-h-full pb-24">
-      {/* Top Bar */}
-      <div className="bg-white px-6 pt-14 pb-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] sticky top-0 z-20 flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Clinic Locations</h1>
-          <p className="text-xs font-medium text-slate-500 mt-0.5">Dr. M.G. Sharma's branches</p>
-        </div>
-        <div className="w-10 h-10 bg-teal-50 rounded-full flex items-center justify-center border border-teal-100 shadow-sm">
-          <Map className="w-5 h-5 text-teal-600" />
-        </div>
+    <div className="min-h-screen bg-slate-50 max-w-[420px] mx-auto pb-10">
+      <div className="bg-white px-6 pt-12 pb-4 shadow">
+        <h1 className="text-lg font-bold">{clinic.name}</h1>
       </div>
 
-      <div className="px-6 mt-6 space-y-6">
-        {branches.map((branch, idx) => (
-          <motion.div
-            key={branch.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className="bg-white rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100"
+      <img src={clinic.image1} className="w-full h-52 object-cover" />
+      <img src={clinic.image2} className="w-full h-52 object-cover mt-2" />
+
+      <div className="p-5 mt-4 bg-white rounded-2xl space-y-5 shadow">
+        <div className="flex gap-3">
+          <MapPin className="text-teal-600" />
+          <p className="whitespace-pre-line text-sm font-semibold">
+            {clinic.address}
+          </p>
+        </div>
+
+        <div className="flex gap-3">
+          <Phone className="text-teal-600" />
+          <p className="text-sm font-semibold">{clinic.phone}</p>
+        </div>
+
+        <div className="flex gap-3">
+          <Clock className="text-teal-600" />
+          <p className="whitespace-pre-line text-sm font-semibold">
+            {clinic.timings}
+          </p>
+        </div>
+
+        <a
+          href={clinic.mapLink}
+          target="_blank"
+          className="block text-center bg-teal-600 text-white py-3 rounded-xl font-bold"
+        >
+          <Navigation className="inline w-4 h-4 mr-1" />
+          Get Directions
+        </a>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+
+// ========================= 👨‍⚕️ DOCTOR CHAT VIEW =========================
+function DoctorChatView() {
+  const [patients, setPatients] = useState<any[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [message, setMessage] = useState("");
+
+  const senderId = "doctor1";
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/patients")
+      .then((res) => res.json())
+      .then(setPatients);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedPatient) return;
+
+    const receiverId = selectedPatient._id;
+    const roomId = [senderId, receiverId].sort().join("_");
+
+    socket.emit("joinRoom", roomId);
+
+    fetch(`http://localhost:5000/api/messages/${senderId}/${receiverId}`)
+      .then((res) => res.json())
+      .then(setMessages);
+
+    socket.on("receiveMessage", (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    return () => {
+      socket.off("receiveMessage");
+    };
+  }, [selectedPatient]);
+
+  const sendMessage = () => {
+    if (!message.trim() || !selectedPatient) return;
+
+    const receiverId = selectedPatient._id;
+    const roomId = [senderId, receiverId].sort().join("_");
+
+    socket.emit("sendMessage", {
+      senderId,
+      receiverId,
+      text: message,
+      roomId,
+    });
+
+    setMessage("");
+  };
+
+  if (!selectedPatient) {
+    return (
+      <div className="min-h-screen bg-slate-50 max-w-[420px] mx-auto">
+        <div className="bg-white px-4 pt-12 pb-4 shadow">
+          <h1 className="text-lg font-bold">Messages</h1>
+          <div className="mt-3 relative">
+            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+            <input
+              placeholder="Search patients..."
+              className="w-full pl-9 pr-3 py-2 bg-gray-100 rounded-xl text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="p-4 space-y-3">
+          {patients.map((p) => (
+            <div
+              key={p._id}
+              onClick={() => setSelectedPatient(p)}
+              className="bg-white p-4 rounded-2xl flex items-center gap-3 shadow-sm"
+            >
+              <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-teal-600" />
+              </div>
+              <p className="font-semibold text-sm">{p.name}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 max-w-[420px] mx-auto flex flex-col">
+      <div className="bg-white px-4 pt-12 pb-3 flex items-center gap-3 shadow">
+        <button onClick={() => setSelectedPatient(null)}>
+          <ArrowLeft />
+        </button>
+        <p className="font-semibold">{selectedPatient.name}</p>
+      </div>
+
+      <div className="flex-1 p-3 space-y-2 overflow-y-auto">
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`flex ${
+              msg.senderId === senderId ? "justify-end" : "justify-start"
+            }`}
           >
-            <div className="relative h-44 group overflow-hidden">
-              <img 
-                src={branch.image} 
-                alt={branch.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
-              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
-                <div className={`w-2 h-2 rounded-full ${branch.status.includes('Open') ? 'bg-emerald-500' : 'bg-orange-500'}`} />
-                <span className="text-xs font-bold text-slate-700">{branch.status}</span>
-              </div>
-              <h2 className="absolute bottom-4 left-5 text-white font-bold text-lg">{branch.name}</h2>
+            <div
+              className={`px-4 py-2 rounded-2xl text-sm ${
+                msg.senderId === senderId
+                  ? "bg-teal-600 text-white"
+                  : "bg-white"
+              }`}
+            >
+              {msg.text}
             </div>
-            
-            <div className="p-5 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="mt-1 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-                  <MapPin className="w-4 h-4 text-slate-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-700 mb-0.5">{branch.address}</p>
-                  <button className="text-xs font-bold text-teal-600 hover:text-teal-700 flex items-center gap-1 transition-colors">
-                    <Navigation className="w-3 h-3" /> Get Directions
-                  </button>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-                  <Phone className="w-4 h-4 text-slate-500" />
-                </div>
-                <p className="text-sm font-semibold text-slate-700">{branch.phone}</p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-                  <Clock className="w-4 h-4 text-slate-500" />
-                </div>
-                <p className="text-sm font-semibold text-slate-700">{branch.timings}</p>
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 mt-2">
-                <button className="w-full bg-teal-50 hover:bg-teal-100 text-teal-700 py-3.5 rounded-xl text-sm font-bold transition-colors">
-                  Book Appointment Here
-                </button>
-              </div>
-            </div>
-          </motion.div>
+          </div>
         ))}
+      </div>
+
+      <div className="p-3 bg-white flex gap-2 border-t">
+        <input
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Message..."
+          className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none"
+        />
+        <button
+          onClick={sendMessage}
+          className="bg-teal-600 text-white px-4 rounded-full"
+        >
+          <Send size={16} />
+        </button>
       </div>
     </div>
   );

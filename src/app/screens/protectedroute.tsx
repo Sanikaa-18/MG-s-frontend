@@ -1,14 +1,19 @@
-import { Navigate } from "react-router-dom";
 import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
 
-export function ProtectedRoute({ children }: { children: React.ReactElement }) {
+export function ProtectedRoute({
+  children,
+}: {
+  children: React.ReactElement;
+}) {
+  const location = useLocation();
   const role = localStorage.getItem("userRole");
 
-  console.log("ProtectedRoute role:", role);
-
+  // if not logged in
   if (!role) {
-    return null;
+    return <Navigate to="/" replace state={{ from: location }} />;
   }
 
+  // if logged in
   return children;
 }

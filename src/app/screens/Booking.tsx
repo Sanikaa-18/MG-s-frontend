@@ -1,203 +1,276 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Calendar as CalendarIcon, MapPin, Clock, ChevronRight, CheckCircle2 } from "lucide-react";
-import { clsx } from "clsx";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ChevronRight,
+  CheckCircle2,
+  Users,
+  Phone,
+  UserRound,
+  Plus,
+  X,
+} from "lucide-react";
 
 export function BookingScreen() {
+  const [role, setRole] = useState<string | null>(null);
+
+  const [patients, setPatients] = useState<any[]>([]);
+  const [loadingPatients, setLoadingPatients] = useState(true);
+
+  const [showAddPatient, setShowAddPatient] = useState(false);
+
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("Male");
+  const [phone, setPhone] = useState("");
+
   const [step, setStep] = useState(1);
-  const [selectedBranch, setSelectedBranch] = useState("main");
-  const [selectedDate, setSelectedDate] = useState("12"); // Mock simple date selection
-  const [selectedTime, setSelectedTime] = useState("10:30 AM");
 
-  const dates = [
-    { day: "Mon", date: "10" },
-    { day: "Tue", date: "11" },
-    { day: "Wed", date: "12" },
-    { day: "Thu", date: "13" },
-    { day: "Fri", date: "14" },
-  ];
+  // patient schedule state (ONLY UI)
+  const [selectedDate, setSelectedDate] = useState("12");
+  const [selectedTime, setSelectedTime] = useState("10:00 AM");
 
-  const timeSlots = [
-    "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM"
-  ];
+  useEffect(() => {
+    setRole(localStorage.getItem("userRole"));
+  }, []);
+
+  const isDoctor = role === "doctor";
+
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/patients");
+        const data = await res.json();
+        setPatients(data);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoadingPatients(false);
+      }
+    };
+
+    fetchPatients();
+  }, []);
+
+  const handleAddPatient = async () => {
+    if (!name || !age || !phone) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/api/patients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          age: Number(age),
+          gender,
+          phone,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setPatients((prev) => [data, ...prev]);
+        setName("");
+        setAge("");
+        setGender("Male");
+        setPhone("");
+        setShowAddPatient(false);
+      } else {
+        alert(data.message || "Failed to save patient");
+      }
+    } catch (error) {
+      console.log(error);
+      alert("Server error");
+    }
+  };
 
   const handleConfirm = () => {
     setStep(2);
   };
 
-  return (
-    <div className="flex-1 bg-slate-50 min-h-full pb-24 relative overflow-hidden">
-      {/* Header Area */}
-      <div className="bg-teal-600 pt-16 pb-8 px-6 rounded-b-[2rem] shadow-md relative z-10">
-        <h1 className="text-xl font-bold text-white tracking-tight">Book Appointment</h1>
-        <p className="text-teal-100 text-sm font-medium mt-1">Schedule your visit</p>
-      </div>
+  if (role === null) return null;
 
-      <AnimatePresence mode="wait">
-        {step === 1 ? (
-          <motion.div
-            key="booking-form"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="px-6 py-6 space-y-8"
-          >
-            {/* Branch Selection */}
-            <section>
-              <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-teal-600" /> Select Branch
-              </h2>
-              <div className="flex flex-col gap-3">
-                <label className={clsx(
-                  "flex items-center p-4 border rounded-2xl cursor-pointer transition-all",
-                  selectedBranch === "main" ? "border-teal-500 bg-teal-50/50 shadow-sm" : "border-slate-200 bg-white"
-                )}>
-                  <input
-                    type="radio"
-                    name="branch"
-                    value="main"
-                    checked={selectedBranch === "main"}
-                    onChange={(e) => setSelectedBranch(e.target.value)}
-                    className="hidden"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-bold text-slate-800 text-sm">Main Clinic (North)</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">9:00 AM - 1:00 PM</p>
-                  </div>
-                  <div className={clsx(
-                    "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                    selectedBranch === "main" ? "border-teal-500" : "border-slate-300"
-                  )}>
-                    {selectedBranch === "main" && <div className="w-2.5 h-2.5 bg-teal-500 rounded-full" />}
-                  </div>
-                </label>
-                <label className={clsx(
-                  "flex items-center p-4 border rounded-2xl cursor-pointer transition-all",
-                  selectedBranch === "south" ? "border-teal-500 bg-teal-50/50 shadow-sm" : "border-slate-200 bg-white"
-                )}>
-                  <input
-                    type="radio"
-                    name="branch"
-                    value="south"
-                    checked={selectedBranch === "south"}
-                    onChange={(e) => setSelectedBranch(e.target.value)}
-                    className="hidden"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-bold text-slate-800 text-sm">South Branch</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">4:00 PM - 8:00 PM</p>
-                  </div>
-                  <div className={clsx(
-                    "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                    selectedBranch === "south" ? "border-teal-500" : "border-slate-300"
-                  )}>
-                    {selectedBranch === "south" && <div className="w-2.5 h-2.5 bg-teal-500 rounded-full" />}
-                  </div>
-                </label>
-              </div>
-            </section>
+  // ================= DOCTOR VIEW (UNCHANGED) =================
+  if (isDoctor) {
+    return (
+      <div className="min-h-screen flex justify-center bg-black">
+        <div className="w-full max-w-[420px] min-h-screen bg-slate-50 pb-24 relative">
 
-            {/* Date Selection */}
-            <section>
-              <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-teal-600" /> Select Date (Oct 2026)
-              </h2>
-              <div className="flex gap-3 overflow-x-auto pb-4 snap-x hide-scrollbar">
-                {dates.map((d) => (
-                  <button
-                    key={d.date}
-                    onClick={() => setSelectedDate(d.date)}
-                    className={clsx(
-                      "flex-shrink-0 w-[4.5rem] h-20 rounded-[1.25rem] flex flex-col items-center justify-center gap-1 border transition-all snap-center",
-                      selectedDate === d.date 
-                        ? "bg-teal-600 border-teal-600 text-white shadow-lg shadow-teal-200" 
-                        : "bg-white border-slate-200 text-slate-600"
-                    )}
-                  >
-                    <span className={clsx("text-[10px] font-bold uppercase tracking-wider", selectedDate === d.date ? "text-teal-100" : "text-slate-400")}>
-                      {d.day}
-                    </span>
-                    <span className="text-xl font-black">{d.date}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* Time Slots */}
-            <section>
-              <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-teal-600" /> Available Time
-              </h2>
-              <div className="grid grid-cols-3 gap-3">
-                {timeSlots.map((time) => (
-                  <button
-                    key={time}
-                    onClick={() => setSelectedTime(time)}
-                    className={clsx(
-                      "py-3 rounded-xl text-xs font-bold border transition-all",
-                      selectedTime === time
-                        ? "bg-teal-50 border-teal-500 text-teal-700 shadow-sm"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
-                    )}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* Bottom Sticky Action */}
-            <div className="fixed bottom-[80px] left-0 right-0 px-6 max-w-[400px] mx-auto z-40 pb-4">
-              <button
-                onClick={handleConfirm}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-2xl py-4 font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-slate-900/20 active:scale-95 transition-all"
-              >
-                Confirm Appointment <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="success-screen"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex-1 flex flex-col items-center justify-center p-6 h-[60vh] text-center"
-          >
-            <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-emerald-100/50 relative">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", delay: 0.2 }}
-              >
-                <CheckCircle2 className="w-12 h-12 text-emerald-500" />
-              </motion.div>
-              <div className="absolute inset-0 border-4 border-emerald-500/20 rounded-full animate-ping" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-2 tracking-tight">Booking Confirmed!</h2>
-            <p className="text-slate-500 text-sm leading-relaxed mb-8 max-w-[250px]">
-              Your appointment with Dr. M.G. Sharma is set for Oct {selectedDate} at {selectedTime}.
+          <div className="bg-teal-600 pt-14 pb-8 px-5 rounded-b-[2rem]">
+            <h1 className="text-xl font-bold text-white">
+              Patient List
+            </h1>
+            <p className="text-teal-100 text-sm mt-1">
+              Clinic Patient Records
             </p>
-            
-            <div className="w-full bg-white border border-slate-100 rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-left mb-6">
-               <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
-                 <span className="text-xs font-semibold text-slate-500">Branch</span>
-                 <span className="text-sm font-bold text-slate-800">{selectedBranch === 'main' ? 'Main Clinic' : 'South Branch'}</span>
-               </div>
-               <div className="flex items-center justify-between">
-                 <span className="text-xs font-semibold text-slate-500">Date & Time</span>
-                 <span className="text-sm font-bold text-slate-800">Oct {selectedDate}, {selectedTime}</span>
-               </div>
+          </div>
+
+          <div className="px-4 -mt-5">
+            <div className="bg-white rounded-3xl shadow p-4 flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center">
+                <Users className="w-6 h-6 text-teal-600" />
+              </div>
+
+              <div>
+                <p className="text-xs text-slate-500">Total Patients</p>
+                <h2 className="text-xl font-bold text-slate-800">
+                  {patients.length}
+                </h2>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-4 mt-5 space-y-4">
+            {loadingPatients ? (
+              <div className="text-center py-10 text-sm text-slate-500">
+                Loading...
+              </div>
+            ) : (
+              patients.map((patient: any, i) => (
+                <motion.div
+                  key={patient._id || i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-3xl p-4 shadow border"
+                >
+                  <div className="flex gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                      <UserRound className="w-5 h-5 text-indigo-600" />
+                    </div>
+
+                    <div>
+                      <h3 className="font-bold text-sm">{patient.name}</h3>
+                      <p className="text-xs text-slate-500">
+                        {patient.age} yrs • {patient.gender}
+                      </p>
+                      <p className="text-xs text-slate-500 flex gap-1">
+                        <Phone className="w-3 h-3" />
+                        {patient.phone}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+
+          <div className="px-4 mt-5">
+            <button
+              onClick={() => setShowAddPatient(true)}
+              className="w-full bg-teal-600 text-white py-4 rounded-2xl font-bold flex justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add New Patient
+            </button>
+          </div>
+
+          {showAddPatient && (
+            <div className="fixed inset-0 bg-black/40 flex items-end justify-center">
+              <div className="w-full max-w-[420px] bg-white rounded-t-3xl p-4">
+                <div className="flex justify-between">
+                  <h2 className="font-bold">Add Patient</h2>
+                  <button onClick={() => setShowAddPatient(false)}>
+                    <X />
+                  </button>
+                </div>
+
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="border p-2 w-full" />
+                <input value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" className="border p-2 w-full" />
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className="border p-2 w-full" />
+
+                <button onClick={handleAddPatient} className="w-full bg-teal-600 text-white p-3 mt-2">
+                  Save
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    );
+  }
+
+  // ================= PATIENT VIEW (SCHEDULE UI) =================
+  return (
+    <div className="min-h-screen flex justify-center bg-black">
+      <div className="w-full max-w-[420px] min-h-screen bg-slate-50 pb-24">
+
+        <div className="bg-teal-600 pt-14 pb-8 px-5 rounded-b-[2rem]">
+          <h1 className="text-xl font-bold text-white">
+            Schedule Appointment
+          </h1>
+          <p className="text-teal-100 text-sm mt-1">
+            Choose date & time
+          </p>
+        </div>
+
+        {step === 1 ? (
+          <div className="p-5 space-y-6">
+
+            {/* DATE */}
+            <div>
+              <h2 className="text-sm font-bold mb-3">Select Date</h2>
+              <div className="flex gap-2">
+                {["10","11","12","13","14"].map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setSelectedDate(d)}
+                    className={`px-4 py-3 rounded-xl border text-sm font-bold ${
+                      selectedDate === d ? "bg-teal-600 text-white" : "bg-white"
+                    }`}
+                  >
+                    Oct {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* TIME */}
+            <div>
+              <h2 className="text-sm font-bold mb-3">Select Time</h2>
+              <div className="grid grid-cols-3 gap-2">
+                {["9:00 AM","10:00 AM","11:00 AM","12:00 PM"].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setSelectedTime(t)}
+                    className={`py-3 rounded-xl border text-xs font-bold ${
+                      selectedTime === t ? "bg-teal-600 text-white" : "bg-white"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <button
+              onClick={handleConfirm}
+              className="w-full bg-slate-900 text-white rounded-2xl py-4 font-bold flex justify-center gap-2"
+            >
+              Confirm Appointment <ChevronRight />
+            </button>
+
+          </div>
+        ) : (
+          <div className="p-6 text-center">
+            <CheckCircle2 className="mx-auto text-emerald-500 w-10 h-10" />
+            <h2 className="text-xl font-bold mt-3">
+              Booking Confirmed!
+            </h2>
+
+            <button
               onClick={() => setStep(1)}
-              className="text-teal-600 font-bold text-sm bg-teal-50 px-6 py-3 rounded-full hover:bg-teal-100 transition-colors"
+              className="mt-6 bg-teal-50 text-teal-700 px-6 py-3 rounded-full"
             >
               Book Another
             </button>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+
+      </div>
     </div>
   );
 }
