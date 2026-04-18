@@ -61,12 +61,16 @@ export function AuthScreen() {
 
       setSuccess("Welcome back 🌿");
 
-      const savedRole = data.role || role;
+      const savedRole = (data.role || role).toLowerCase();
 
-      localStorage.setItem("userRole", savedRole);
-      localStorage.setItem("isLoggedIn", "true");
+localStorage.setItem("userRole", savedRole);
+localStorage.setItem("isLoggedIn", "true");
 
-      navigate("/dashboard", { replace: true });
+if (savedRole === "doctor") {
+  navigate("/doctor-home", { replace: true });
+} else {
+  navigate("/patient-home", { replace: true });
+}
     } catch {
       setLoading(false);
       setError("Server not reachable");

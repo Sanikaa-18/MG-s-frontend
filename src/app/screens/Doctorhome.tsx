@@ -93,11 +93,11 @@ export function DoctorHomeScreen() {
   };
 
   const doctorActions = [
-    { id: "records", title: "Patients", icon: Users, color: "bg-indigo-50 text-indigo-600" },
-    { id: "messages", title: "Messages", icon: MessageCircle, color: "bg-teal-50 text-teal-600" },
-    { id: "records", title: "List", icon: List, color: "bg-emerald-50 text-emerald-600" },
-    { id: "alerts", title: "Alerts", icon: Bell, color: "bg-orange-50 text-orange-600" },
-  ];
+  { id: "records", title: "Patient Records", icon: Users, color: "bg-indigo-50 text-indigo-600" },
+  { id: "list", title: "Patients List", icon: List, color: "bg-emerald-50 text-emerald-600" },
+  { id: "messages", title: "Messages", icon: MessageCircle, color: "bg-teal-50 text-teal-600" },
+  { id: "alerts", title: "Alerts", icon: Bell, color: "bg-orange-50 text-orange-600" },
+];
 
   const bottomNav = [
     { id: "home", icon: Home, label: "Home" },

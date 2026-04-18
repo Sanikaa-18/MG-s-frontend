@@ -17,7 +17,6 @@ import BranchesScreen from "./screens/Branches";
 export default function App() {
   const [role, setRole] = useState<string | null>(null);
 
-  // ✅ FIX: always sync role from localStorage
   useEffect(() => {
     const storedRole = localStorage.getItem("userRole");
     setRole(storedRole);
@@ -28,7 +27,7 @@ export default function App() {
       {/* LOGIN */}
       <Route path="/" element={<AuthScreen />} />
 
-      {/* ROLE REDIRECT */}
+      {/* ROLE REDIRECT (FIXED) */}
       <Route
         path="/dashboard"
         element={
@@ -42,9 +41,7 @@ export default function App() {
         }
       />
 
-      {/* ========================= */}
-      {/* DOCTOR ROUTE */}
-      {/* ========================= */}
+      {/* DOCTOR HOME */}
       <Route
         path="/doctor"
         element={
@@ -54,9 +51,7 @@ export default function App() {
         }
       />
 
-      {/* ========================= */}
-      {/* PATIENT ROUTE */}
-      {/* ========================= */}
+      {/* PATIENT HOME */}
       <Route
         path="/patient"
         element={
@@ -66,9 +61,7 @@ export default function App() {
         }
       />
 
-      {/* ========================= */}
-      {/* DOCTOR FEATURES */}
-      {/* ========================= */}
+      {/* FEATURES (UNCHANGED) */}
       <Route
         path="/history"
         element={
@@ -87,9 +80,6 @@ export default function App() {
         }
       />
 
-      {/* ========================= */}
-      {/* COMMON ROUTES */}
-      {/* ========================= */}
       <Route
         path="/branches"
         element={
@@ -117,7 +107,6 @@ export default function App() {
         }
       />
 
-      {/* RESET PASSWORD */}
       <Route path="/reset-password/:token" element={<ResetPassword />} />
 
       {/* FALLBACK */}

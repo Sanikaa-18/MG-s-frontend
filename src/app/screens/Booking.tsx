@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ChevronRight,
   CheckCircle2,
@@ -11,7 +11,10 @@ import {
 } from "lucide-react";
 
 export function BookingScreen() {
-  const [role, setRole] = useState<string | null>(null);
+
+  // ✅ FIX: remove async state issue (IMPORTANT)
+  const role = localStorage.getItem("userRole");
+  const isDoctor = role === "doctor";
 
   const [patients, setPatients] = useState<any[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(true);
@@ -25,24 +28,29 @@ export function BookingScreen() {
 
   const [step, setStep] = useState(1);
 
-  // patient schedule state (ONLY UI)
   const [selectedDate, setSelectedDate] = useState("12");
   const [selectedTime, setSelectedTime] = useState("10:00 AM");
 
-  useEffect(() => {
-    setRole(localStorage.getItem("userRole"));
-  }, []);
-
-  const isDoctor = role === "doctor";
-
+  // ================= FETCH PATIENTS =================
   useEffect(() => {
     const fetchPatients = async () => {
       try {
+        setLoadingPatients(true);
+
         const res = await fetch("http://localhost:5000/api/patients");
+
+        if (!res.ok) {
+          throw new Error("API failed");
+        }
+
         const data = await res.json();
-        setPatients(data);
+
+        console.log("PATIENTS:", data);
+
+        setPatients(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.log(error);
+        console.log("ERROR:", error);
+        setPatients([]);
       } finally {
         setLoadingPatients(false);
       }
@@ -51,6 +59,7 @@ export function BookingScreen() {
     fetchPatients();
   }, []);
 
+  // ================= ADD PATIENT =================
   const handleAddPatient = async () => {
     if (!name || !age || !phone) {
       alert("Please fill all fields");
@@ -91,14 +100,15 @@ export function BookingScreen() {
     setStep(2);
   };
 
-  if (role === null) return null;
+  if (!role) return null;
 
-  // ================= DOCTOR VIEW (UNCHANGED) =================
+  // ================= DOCTOR VIEW =================
   if (isDoctor) {
     return (
       <div className="min-h-screen flex justify-center bg-black">
         <div className="w-full max-w-[420px] min-h-screen bg-slate-50 pb-24 relative">
 
+          {/* HEADER */}
           <div className="bg-teal-600 pt-14 pb-8 px-5 rounded-b-[2rem]">
             <h1 className="text-xl font-bold text-white">
               Patient List
@@ -108,6 +118,7 @@ export function BookingScreen() {
             </p>
           </div>
 
+          {/* TOTAL */}
           <div className="px-4 -mt-5">
             <div className="bg-white rounded-3xl shadow p-4 flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center">
@@ -123,10 +134,15 @@ export function BookingScreen() {
             </div>
           </div>
 
+          {/* LIST */}
           <div className="px-4 mt-5 space-y-4">
             {loadingPatients ? (
               <div className="text-center py-10 text-sm text-slate-500">
                 Loading...
+              </div>
+            ) : patients.length === 0 ? (
+              <div className="text-center py-10 text-sm text-slate-500">
+                No patients found in database
               </div>
             ) : (
               patients.map((patient: any, i) => (
@@ -134,7 +150,9 @@ export function BookingScreen() {
                   key={patient._id || i}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-3xl p-4 shadow border"
+                  // ✅ FIX: clickable list
+                  onClick={() => console.log("Clicked patient:", patient)}
+                  className="cursor-pointer bg-white rounded-3xl p-4 shadow border"
                 >
                   <div className="flex gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center">
@@ -157,6 +175,7 @@ export function BookingScreen() {
             )}
           </div>
 
+          {/* ADD BUTTON */}
           <div className="px-4 mt-5">
             <button
               onClick={() => setShowAddPatient(true)}
@@ -167,6 +186,7 @@ export function BookingScreen() {
             </button>
           </div>
 
+          {/* MODAL */}
           {showAddPatient && (
             <div className="fixed inset-0 bg-black/40 flex items-end justify-center">
               <div className="w-full max-w-[420px] bg-white rounded-t-3xl p-4">
@@ -181,7 +201,10 @@ export function BookingScreen() {
                 <input value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" className="border p-2 w-full" />
                 <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className="border p-2 w-full" />
 
-                <button onClick={handleAddPatient} className="w-full bg-teal-600 text-white p-3 mt-2">
+                <button
+                  onClick={handleAddPatient}
+                  className="w-full bg-teal-600 text-white p-3 mt-2"
+                >
                   Save
                 </button>
               </div>
@@ -192,7 +215,7 @@ export function BookingScreen() {
       </div>
     );
   }
-
+npm
   // ================= PATIENT VIEW (SCHEDULE UI) =================
   return (
     <div className="min-h-screen flex justify-center bg-black">
